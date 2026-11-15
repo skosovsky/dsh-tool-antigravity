@@ -74,14 +74,13 @@ vi.mock('node:tls', async () => {
   }
 })
 
-import { createPrivateTransport, readPrivateText, scopedHttpsFetch, setExplicitProxy } from '../src/private-transport.ts'
+import { createPrivateTransport, readPrivateText, scopedHttpsFetch } from '../src/private-transport.ts'
 import { ANTIGRAVITY_GENERATE_ENDPOINT } from '../src/llm-adapter.ts'
 
 const proxyEnvironmentKeys = ['NO_PROXY', 'no_proxy', 'HTTPS_PROXY', 'https_proxy', 'ALL_PROXY', 'all_proxy', 'HTTP_PROXY', 'http_proxy'] as const
 const originalProxyEnvironment = Object.fromEntries(proxyEnvironmentKeys.map(key => [key, process.env[key]]))
 
 beforeEach(() => {
-  setExplicitProxy(undefined)
   socketState.request = ''
   socketState.proxyRequest = ''
   socketState.holdProxyResponse = false
@@ -99,7 +98,6 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  setExplicitProxy(undefined)
   for (const key of proxyEnvironmentKeys) {
     const value = originalProxyEnvironment[key]
     if (value === undefined) delete process.env[key]
@@ -306,9 +304,9 @@ describe('fixed private raw transport', () => {
     await expect(readPrivateText(response, { maxBytes: 80 * 1024 })).resolves.toHaveLength(body.length)
   })
 
-  it('routes scopedHttpsFetch through proxy when proxy is explicitly configured', async () => {
+  it('routes scopedHttpsFetch through the host HTTPS_PROXY', async () => {
     delete process.env.NO_PROXY
-    setExplicitProxy('http://proxy.invalid:8080')
+    process.env.HTTPS_PROXY = 'http://proxy.invalid:8080'
 
     const response = await scopedHttpsFetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -325,7 +323,7 @@ describe('fixed private raw transport', () => {
   })
 
   it('bypasses proxy in scopedHttpsFetch when host is excluded by NO_PROXY', async () => {
-    setExplicitProxy('http://proxy.invalid:8080')
+    process.env.HTTPS_PROXY = 'http://proxy.invalid:8080'
     process.env.NO_PROXY = 'oauth2.googleapis.com'
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementationOnce(async () => new Response('direct-fallback', { status: 200 }))
 
@@ -338,7 +336,7 @@ describe('fixed private raw transport', () => {
 
   it('handles 204 No Content with null body in scopedHttpsFetch', async () => {
     delete process.env.NO_PROXY
-    setExplicitProxy('http://proxy.invalid:8080')
+    process.env.HTTPS_PROXY = 'http://proxy.invalid:8080'
     socketState.response = Buffer.from('HTTP/1.1 204 No Content\r\n\r\n', 'latin1')
 
     const response = await scopedHttpsFetch('https://oauth2.googleapis.com/revoke', {
@@ -351,7 +349,7 @@ describe('fixed private raw transport', () => {
 
   it('rejects with AbortError when signal is aborted in scopedHttpsFetch', async () => {
     delete process.env.NO_PROXY
-    setExplicitProxy('http://proxy.invalid:8080')
+    process.env.HTTPS_PROXY = 'http://proxy.invalid:8080'
     const controller = new AbortController()
     controller.abort()
 

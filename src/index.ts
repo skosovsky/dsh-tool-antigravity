@@ -17,32 +17,19 @@ import {
   commandAccountMode, createLoopbackRpcGuard, type LoopbackRpcMode,
 } from './loopback-rpc.ts'
 import { mountCapabilityLifecycle } from './capability-lifecycle.ts'
-import { applyProxySetting, getStoredProxy } from './proxy-config.ts'
 import { registerAntigravityPetBalance } from './pet-balance.ts'
 
 export const name = 'antigravity-auth'
 export const inject = ['llm', 'attachments']
 
-export interface AntigravityAuthConfig {
-  proxy?: string
-  /**
-   * Sign in several accounts and rotate between them on quota exhaustion. On by default.
-   */
-  multiAccount?: boolean
-}
+/** One account, no plugin proxy: requests follow the host network settings. */
+export interface AntigravityAuthConfig {}
 
 /** Mount the Host-only OAuth service and its guarded account RPC channel. */
 export function apply(ctx: Context, config: AntigravityAuthConfig = {}): void {
-  const initial = config.proxy || getStoredProxy()
-  if (initial) applyProxySetting(initial)
-  const configContext = ctx as Context & { on?: (event: string, listener: (nextConfig: AntigravityAuthConfig | undefined) => void) => void }
-  configContext.on?.('config', (nextConfig: AntigravityAuthConfig | undefined) => {
-    if (nextConfig) applyProxySetting(nextConfig.proxy || getStoredProxy())
-  })
   const service = createAntigravityAuthService({
     storePath: defaultAuthStorePath(),
     autoActivateGates: true,
-    multiAccount: config.multiAccount !== false,
   })
   // Account-control activation for the slash command. A terminal composition
   // composes no public WebServer, so the command starts enabled (local-only
@@ -80,7 +67,7 @@ export function apply(ctx: Context, config: AntigravityAuthConfig = {}): void {
     return registerAccountRoutes(
       connectionCtx.connection,
       ANTIGRAVITY_AUTH_RPC_NAMESPACE,
-      ['status', 'models', 'usage', 'select-account', 'remove-account', 'acknowledge-risk', 'login', 'cancel', 'cancel-login', 'logout', 'revoke', 'get-proxy', 'set-proxy'],
+      ['status', 'models', 'usage', 'acknowledge-risk', 'login', 'cancel', 'cancel-login', 'logout', 'revoke'],
       guard.handler,
     )
   })
@@ -107,7 +94,6 @@ export function apply(ctx: Context, config: AntigravityAuthConfig = {}): void {
 
 export * from './pet-balance.ts'
 export * from './auth-service.ts'
-export * from './auth-store-pool.ts'
 export * from './rotation-policy.ts'
 export * from './credential-coordinator.ts'
 export * from './rpc-contract.ts'
@@ -122,4 +108,3 @@ export * from './media-admission.ts'
 export * from './model-catalog.ts'
 export * from './capability-gates.ts'
 export * from './live-gates.ts'
-export * from './proxy-config.ts'

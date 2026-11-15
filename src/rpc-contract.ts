@@ -14,7 +14,6 @@ import type {
   LoginStatusView,
   RiskAcknowledgementResult,
 } from './status.ts'
-import type { AccountOperationResult } from './auth-service.ts'
 import { isLoginErrorCode, isLoginPhase } from './login-types.ts'
 import type { CredentialErrorCode, CredentialState, CredentialStatusView, RevokeActionResult, RevokeErrorCode, RevokeState, RevokeStatusView } from './credential-coordinator.ts'
 import type { QuotaGroupView, QuotaState, QuotaStatusView, QuotaWindowKind } from './quota.ts'
@@ -36,12 +35,8 @@ export interface AntigravityAuthRpcClient {
   cancelLogin(signal?: AbortSignal): Promise<RpcResult<LoginActionResult>>
   logout(signal?: AbortSignal): Promise<RpcResult<{ state: 'logged-out' }>>
   revoke(signal?: AbortSignal): Promise<RpcResult<RevokeActionResult>>
-  selectAccount?(handle: string, signal?: AbortSignal): Promise<RpcResult<AccountOperationResult>>
-  removeAccount?(handle: string, signal?: AbortSignal): Promise<RpcResult<AccountOperationResult>>
   models(signal?: AbortSignal, force?: boolean): Promise<RpcResult<AntigravityModelCatalogView>>
   usage?(signal?: AbortSignal, force?: boolean): Promise<RpcResult<QuotaStatusView>>
-  getProxy(signal?: AbortSignal): Promise<RpcResult<{ proxy: string }>>
-  setProxy(proxy: string, signal?: AbortSignal): Promise<RpcResult<{ proxy: string }>>
 }
 
 export interface AntigravityAuthConnectionRpc {
@@ -65,12 +60,8 @@ export function createAntigravityAuthRpcClient(rpc: AntigravityAuthConnectionRpc
     cancelLogin: signal => callValidated(rpc, 'cancel', {}, signal, parseActionResult),
     logout: signal => callValidated(rpc, 'logout', {}, signal, parseLogoutResult),
     revoke: signal => callValidated(rpc, 'revoke', { confirmed: true }, signal, parseRevokeResult),
-    selectAccount: (handle, signal) => callValidated(rpc, 'select-account', { id: handle }, signal, parseAccountOperationResult),
-    removeAccount: (handle, signal) => callValidated(rpc, 'remove-account', { id: handle }, signal, parseAccountOperationResult),
     models: (signal, force = false) => callValidated(rpc, 'models', { force }, signal, parseModelCatalogResult),
     usage: (signal, force = false) => callValidated(rpc, 'usage', { force }, signal, parseUsageResult),
-    getProxy: signal => callValidated(rpc, 'get-proxy', {}, signal, value => (isRecord(value) ? value as { proxy: string } : undefined)),
-    setProxy: (proxy, signal) => callValidated(rpc, 'set-proxy', { proxy }, signal, value => (isRecord(value) ? value as { proxy: string } : undefined)),
   }
 }
 
@@ -195,13 +186,6 @@ export function parseStatusResult(value: unknown): AntigravityStatusView | undef
 }
 
 /** Validate the closed result of an account-list operation. */
-function parseAccountOperationResult(value: unknown): AccountOperationResult | undefined {
-  if (!isRecord(value) || !hasAllowedKeys(value, ['state'])) return undefined
-  const state = value.state
-  if (state !== 'selected' && state !== 'removed' && state !== 'unknown-account') return undefined
-  return { state }
-}
-
 function parseStatus(value: unknown): AntigravityStatusView | undefined {
   if (!isRecord(value)
     || !hasAllowedKeys(value, [

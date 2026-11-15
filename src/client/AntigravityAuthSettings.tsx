@@ -14,7 +14,6 @@ import type {
 } from '../status.ts'
 import type { AntigravityAuthKey } from './locales.ts'
 import { ensureSettingsStyles } from './styles.ts'
-import { AccountList } from './AccountList.tsx'
 
 export interface AntigravityAuthSettingsProps {
   rpc: AntigravityAuthRpcClient
@@ -55,9 +54,6 @@ export function AntigravityAuthSettings({ rpc, t, subscribe, imageScope }: Antig
   const [_error, setError] = useState<string | null>(null)
   const [loginBusy, setLoginBusy] = useState(false)
   const [actionBusy, setActionBusy] = useState(false)
-  const [proxyInput, setProxyInput] = useState('')
-  const [proxySaving, setProxySaving] = useState(false)
-  const [proxyMessage, setProxyMessage] = useState('')
   const [resetTick, setResetTick] = useState(0)
   const statusGeneration = useRef(0)
   const quotaGeneration = useRef(0)
@@ -69,34 +65,6 @@ export function AntigravityAuthSettings({ rpc, t, subscribe, imageScope }: Antig
 
   useEffect(() => subscribe(() => { setResetTick(value => value + 1) }), [subscribe])
 
-  useEffect(() => {
-    let active = true
-    rpc.getProxy?.().then(res => {
-      if (active && res?.ok && typeof res.value?.proxy === 'string') {
-        setProxyInput(res.value.proxy)
-      }
-    })
-    return () => { active = false }
-  }, [rpc, resetTick])
-
-  const saveProxy = async (): Promise<void> => {
-    setProxySaving(true)
-    try {
-      const trimmed = proxyInput.trim()
-      const res = await rpc.setProxy?.(trimmed)
-      if (res?.ok) {
-        setProxyMessage(trimmed ? `${t('proxySaved')}${trimmed}` : t('proxyCleared'))
-      } else {
-        setProxyMessage(`${t('saveProxyFailed')}${res?.error?.message ?? ''}`)
-      }
-      setTimeout(() => setProxyMessage(''), 4000)
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err)
-      setProxyMessage(`${t('saveProxyFailed')}${message}`)
-    } finally {
-      setProxySaving(false)
-    }
-  }
   const load = useCallback(async (signal?: AbortSignal, silent = false) => {
     const generation = ++statusGeneration.current
     if (!silent) {
@@ -285,26 +253,6 @@ export function AntigravityAuthSettings({ rpc, t, subscribe, imageScope }: Antig
             t={t}
           />
 
-          {/* Which accounts exist and which one is in use. The Host reports a pool only
-              when multi-account is enabled, so the single-account card is unchanged. */}
-          {status === null ? null : (
-            <>
-              <h3 className="agy-account-section-title">{t('accountsTitle')}</h3>
-              <p className="agy-card-subtext">{t('accountsIntro')}</p>
-              <AccountList
-                accounts={status.accounts}
-                singleAccount={status.singleAccount}
-                t={t}
-                rpc={rpc}
-                onChanged={async () => {
-                  const signal = unmountSignal()
-                  void loadQuota(true, signal)
-                  await load(signal, true)
-                }}
-              />
-            </>
-          )}
-
           <div className="agy-action-row">
             {status?.login.phase === 'pending' && typeof status.login.authorizationUrl === 'string' ? (
               <>
@@ -321,14 +269,7 @@ export function AntigravityAuthSettings({ rpc, t, subscribe, imageScope }: Antig
               </button>
             )}
 
-            {/*
-              Local logout is hidden once the install runs a pool: it only removes the active
-              account, which the per-row "Remove account" control already does with an
-              explicit target. Showing both made the same action look like two different
-              ones. The single-account install keeps it, being the only way to clear its one
-              account without revoking the grant.
-            */}
-            {status?.credential?.configured && status.singleAccount ? (
+            {status?.credential?.configured ? (
               <button className="agy-btn agy-btn-outline" type="button" disabled={actionBusy} onClick={() => { void logout() }}>
                 {t('logout')}
               </button>
@@ -363,47 +304,7 @@ export function AntigravityAuthSettings({ rpc, t, subscribe, imageScope }: Antig
           )}
         </article>
 
-        {/* Card 2: Network Proxy */}
-        <article className="agy-card">
-          <div className="agy-card-header">
-            <div className="agy-card-identity">
-              <h2 className="agy-card-title">{t('proxyCardTitle')}</h2>
-              <p className="agy-card-intro">{t('proxyCardIntro')}</p>
-            </div>
-          </div>
-          <div className="agy-proxy-row">
-            <input
-              type="text"
-              className="agy-input"
-              placeholder={t('proxyPlaceholder')}
-              value={proxyInput}
-              onChange={e => setProxyInput(e.target.value)}
-            />
-            <button
-              className="agy-btn agy-btn-outline"
-              type="button"
-              disabled={proxySaving}
-              onClick={() => { void saveProxy() }}
-            >
-              {proxySaving ? t('savingProxy') : t('saveProxy')}
-            </button>
-          </div>
-          {proxyMessage ? (
-            <p
-              className="agy-card-subtext"
-              style={{
-                color: proxyMessage.startsWith(t('saveProxyFailed'))
-                  ? 'var(--dsw-alias-state-error-primary, #ef4444)'
-                  : 'var(--dsw-alias-state-success-primary, #10b981)',
-                margin: '2px 0 0',
-              }}
-            >
-              {proxyMessage}
-            </p>
-          ) : null}
-        </article>
-
-        {/* Card 3: Image Creation */}
+        {/* Card 2: Image Creation */}
         <article className="agy-card">
           <div className="agy-card-header">
             <div className="agy-card-identity">

@@ -4,19 +4,15 @@ import type { ConnectionRpcResult as RpcResult } from '@deepseek-ai/dsh-client-c
 import { OAuthFlowError } from './oauth-flow.ts'
 import { CredentialOperationError, credentialErrorMessage } from './credential-coordinator.ts'
 import type { BootstrapStatusService } from './status.ts'
-import type { AccountOperationResult } from './auth-service.ts'
 import type { QuotaStatusView } from './quota.ts'
 import { isSafeRpcErrorCode, safeRpcErrorMessage } from './rpc-vocabulary.ts'
 import type { AntigravityModelCatalogService } from './model-catalog.ts'
-import { getStoredProxy, setStoredProxy, applyProxySetting } from './proxy-config.ts'
 export { ANTIGRAVITY_AUTH_RPC_CHANNEL, ANTIGRAVITY_AUTH_RPC_NAMESPACE } from './rpc-contract.ts'
 
 /** Dispatch closed, value-safe requests; callback URLs are never echoed. */
 export async function handleAntigravityAuthRpc(
   service: Pick<BootstrapStatusService, 'status' | 'acknowledgeRisk' | 'startLogin' | 'cancelLogin' | 'logout' | 'revoke'> & {
     usage?: (signal?: AbortSignal, force?: boolean) => Promise<QuotaStatusView>
-    selectAccount?: (handle: string) => Promise<AccountOperationResult>
-    removeAccount?: (handle: string) => Promise<AccountOperationResult>
   },
   endpoint: string,
   payload: unknown,
@@ -29,16 +25,6 @@ export async function handleAntigravityAuthRpc(
     if (endpoint === 'status') {
       if (!isEmptyRecord(payload)) return badRequest('status expects an empty payload')
       return { ok: true, value: { status: await service.status() } }
-    }
-    if (endpoint === 'select-account') {
-      if (!isAccountHandlePayload(payload)) return badRequest('select-account expects { id: string }')
-      if (service.selectAccount === undefined) return badRequest('account selection is unavailable')
-      return { ok: true, value: await service.selectAccount(payload.id) }
-    }
-    if (endpoint === 'remove-account') {
-      if (!isAccountHandlePayload(payload)) return badRequest('remove-account expects { id: string }')
-      if (service.removeAccount === undefined) return badRequest('account removal is unavailable')
-      return { ok: true, value: await service.removeAccount(payload.id) }
     }
     if (endpoint === 'models') {
       if (!isRefreshPayload(payload)) return badRequest('models expects {} or { force: boolean }')
@@ -74,15 +60,6 @@ export async function handleAntigravityAuthRpc(
     if (endpoint === 'revoke') {
       if (!isRevokePayload(payload)) return badRequest('revoke expects { confirmed: true }')
       return { ok: true, value: await service.revoke(true, signal) }
-    }
-    if (endpoint === 'get-proxy') {
-      return { ok: true, value: { proxy: getStoredProxy() } }
-    }
-    if (endpoint === 'set-proxy') {
-      const proxy = isRecord(payload) && typeof payload.proxy === 'string' ? payload.proxy.trim() : ''
-      setStoredProxy(proxy)
-      applyProxySetting(proxy)
-      return { ok: true, value: { proxy } }
     }
     return badRequest('unknown Antigravity auth endpoint')
   } catch (error) {
@@ -132,14 +109,6 @@ function isRefreshPayload(value: unknown): value is { force?: boolean } {
  * The handle is an opaque hash the Host produced, so anything outside the shape it
  * emits is a malformed request rather than an account that happens to be unknown.
  */
-function isAccountHandlePayload(value: unknown): value is { id: string } {
-  return isRecord(value)
-    && Object.keys(value).length === 1
-    && typeof value.id === 'string'
-    && value.id.length > 0
-    && value.id.length <= 128
-}
-
 function isAcknowledgement(value: unknown): value is { acknowledge: true } {
   return isRecord(value)
     && Object.keys(value).length === 1

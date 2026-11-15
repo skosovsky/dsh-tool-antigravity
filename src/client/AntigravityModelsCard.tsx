@@ -27,7 +27,7 @@ const button = {
 /** Signed in when the single store holds a credential or the pool has an account. */
 export function antigravitySignedIn(status: AntigravityStatusView | null): boolean {
   if (status === null) return false
-  return status.credential?.configured === true || status.accounts.length > 0
+  return status.credential?.configured === true || status.login.configured
 }
 
 export function AntigravityModelsCard({ rpc, t, subscribe, imageScope }: AntigravityModelsCardProps): ReactNode {
@@ -60,9 +60,7 @@ export function AntigravityModelsCard({ rpc, t, subscribe, imageScope }: Antigra
 
   const signedIn = antigravitySignedIn(status)
   useEffect(() => { if (!signedIn) setOpen(false) }, [signedIn])
-  const active = status?.accounts.find(account => account.active) ?? status?.accounts[0]
-  const email = active?.email
-  const others = (status?.accounts.length ?? 0) - 1
+  const email = status?.login.maskedEmail
 
   return (
     <div style={{ border: '1px solid var(--dsw-alias-border-l2)', borderRadius: 12, padding: '12px 14px', color: 'var(--dsw-alias-label-primary)' }}>
@@ -79,7 +77,7 @@ export function AntigravityModelsCard({ rpc, t, subscribe, imageScope }: Antigra
           </span>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontWeight: 600 }}>{email}</span>
-            <span style={secondary}>{t('accountsActive')}{others > 0 ? ` · +${others}` : ''}</span>
+            <span style={secondary}>{t('accountsActive')}</span>
           </div>
         </div>
       )}

@@ -428,13 +428,8 @@ function proxyAuthorizationHeader(proxy: URL): string {
   return `Proxy-Authorization: Basic ${Buffer.from(`${username}:${password}`).toString('base64')}\r\n`
 }
 
-let explicitProxy: string | undefined = undefined
 
-export function setExplicitProxy(value: string | undefined): void {
-  explicitProxy = typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined
-}
-
-/** Bounded HTTPS fetch implementation that respects explicit/environment proxy without modifying the global dispatcher. */
+/** Bounded HTTPS fetch that follows the host proxy environment (HTTPS_PROXY / NO_PROXY) without modifying the global dispatcher. */
 export async function scopedHttpsFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
@@ -533,7 +528,7 @@ export async function scopedHttpsFetch(
 function httpsProxy(url: URL): URL | undefined {
   const noProxy = process.env.NO_PROXY ?? process.env.no_proxy ?? ''
   if (matchesNoProxy(url.hostname, noProxy)) return undefined
-  const raw = explicitProxy ?? process.env.HTTPS_PROXY ?? process.env.https_proxy ?? process.env.ALL_PROXY ?? process.env.all_proxy ?? process.env.HTTP_PROXY ?? process.env.http_proxy
+  const raw = process.env.HTTPS_PROXY ?? process.env.https_proxy ?? process.env.ALL_PROXY ?? process.env.all_proxy ?? process.env.HTTP_PROXY ?? process.env.http_proxy
   if (raw === undefined || raw.length === 0) return undefined
   try {
     const normalized = /^https?:\/\//i.test(raw) ? raw : `http://${raw}`
