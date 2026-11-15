@@ -155,7 +155,7 @@ export const en = {
   modelsHelp: 'Accounts, proxy, image options and capabilities:',
   modelsSignIn: 'Sign in',
   modelsMoreSettings: 'More settings',
-  modelsClose: 'Close',
+  modelsClose: 'Hide settings',
   modelsManage: 'Manage accounts',
 } as const
 
@@ -316,6 +316,6 @@ export const zh: Record<AntigravityAuthKey, string> = {
   modelsHelp: '账号、代理、图像选项和能力：',
   modelsSignIn: '登录',
   modelsMoreSettings: '更多设置',
-  modelsClose: '关闭',
+  modelsClose: '收起设置',
   modelsManage: '管理账号',
 }

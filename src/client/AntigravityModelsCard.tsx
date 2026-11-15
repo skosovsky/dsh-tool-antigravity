@@ -8,7 +8,7 @@ import type { AntigravityStatusView } from '../status.ts'
 import type { AntigravityAuthKey } from './locales.ts'
 import { AntigravityAuthSettings, QuotaVisualDashboard } from './AntigravityAuthSettings.tsx'
 import type { AntigravityAuthSettingsProps } from './AntigravityAuthSettings.tsx'
-import { SettingsDialog } from './SettingsDialog.tsx'
+import { InlineSettings } from './InlineSettings.tsx'
 import { ensureSettingsStyles } from './styles.ts'
 
 export interface AntigravityModelsCardProps {
@@ -98,13 +98,13 @@ export function AntigravityModelsCard({ rpc, t, subscribe, imageScope }: Antigra
       )}
       <div style={{ ...secondary, marginTop: 12 }}>
         {t('modelsHelp')}{' '}
-        <button type="button" onClick={() => { setSettingsOpen(true) }}
-          style={{ padding: 0, border: 0, background: 'transparent', color: 'inherit', font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>{t('modelsMoreSettings')}</button>
+        <button type="button" aria-expanded={settingsOpen} onClick={() => { setSettingsOpen(!settingsOpen) }}
+          style={{ padding: 0, border: 0, background: 'transparent', color: 'inherit', font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>{settingsOpen ? t('modelsClose') : t('modelsMoreSettings')}</button>
       </div>
       {settingsOpen && (
-        <SettingsDialog title={t('modelsCardName')} closeLabel={t('modelsClose')} onClose={() => { setSettingsOpen(false); void load() }}>
+        <InlineSettings>
           <AntigravityAuthSettings rpc={rpc} t={t} subscribe={subscribe} imageScope={imageScope} />
-        </SettingsDialog>
+        </InlineSettings>
       )}
     </div>
   )
