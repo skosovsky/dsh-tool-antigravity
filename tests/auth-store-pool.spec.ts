@@ -318,14 +318,14 @@ describe('auth-store-pool', () => {
 
   it('rejects a corrupt pool file', async () => {
     const path = await poolPath()
-    await writeFile(path, '{ not json', 'utf8')
+    await writeFile(path, '{ not json', { encoding: 'utf8', mode: 0o600 })
     const store = createAuthStorePool(path)
     await expect(store.read()).rejects.toBeInstanceOf(AuthStoreError)
   })
 
   it('rejects an unsupported pool version', async () => {
     const path = await poolPath()
-    await writeFile(path, JSON.stringify({ version: 99, accounts: [], activeIndex: 0 }), 'utf8')
+    await writeFile(path, JSON.stringify({ version: 99, accounts: [], activeIndex: 0 }), { encoding: 'utf8', mode: 0o600 })
     const store = createAuthStorePool(path)
     await expect(store.read().catch(error => (error as AuthStoreError).code))
       .resolves.toBe('AUTH_STORE_UNSUPPORTED_VERSION')
@@ -337,7 +337,7 @@ describe('auth-store-pool', () => {
       version: AUTH_POOL_VERSION,
       accounts: [{ refreshToken: '', projectId: 'p', lineage: 'l' }],
       activeIndex: 0,
-    }), 'utf8')
+    }), { encoding: 'utf8', mode: 0o600 })
     const store = createAuthStorePool(path)
     await expect(store.read().catch(error => (error as AuthStoreError).code))
       .resolves.toBe('AUTH_STORE_CORRUPT')
@@ -349,7 +349,7 @@ describe('auth-store-pool', () => {
       version: AUTH_POOL_VERSION,
       accounts: [{ refreshToken: 'token-a', projectId: 'p', lineage: 'l', addedAt: new Date(0).toISOString() }],
       activeIndex: 57,
-    }), 'utf8')
+    }), { encoding: 'utf8', mode: 0o600 })
     const pool = await readPoolFile(path)
     expect(pool.activeIndex).toBe(0)
   })
@@ -363,7 +363,7 @@ describe('auth-store-pool', () => {
         { refreshToken: 'token-b', projectId: 'p', lineage: 'same', addedAt: new Date(0).toISOString() },
       ],
       activeIndex: 0,
-    }), 'utf8')
+    }), { encoding: 'utf8', mode: 0o600 })
     const pool = await readPoolFile(path)
     expect(pool.accounts).toHaveLength(1)
     expect(pool.accounts[0]?.refreshToken).toBe('token-a')

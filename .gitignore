@@ -5,7 +5,6 @@ node_modules/
 # Build artifacts
 lib/
 dist/
-build/
 *.tsbuildinfo
 
 # Logs & Runtime

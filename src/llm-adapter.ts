@@ -17,6 +17,7 @@ import {
   isGeminiArgonModel,
   isGeminiCarbonModel,
   orderAgyRequestPayloadInPlace,
+  rewriteHarnessIdentity,
   resolveModelWithTier,
   toGeminiSchema,
 } from '@cortexkit/antigravity-auth-core'
@@ -146,7 +147,7 @@ export interface AntigravityRequestMetadata {
 /** Adapter that owns exactly one provider route and no fallback route. */
 export class AntigravityAdapter extends LlmAdapter {
   private readonly transport: PrivateTransport
-  private readonly sessions = new AgyRequestSessionStore('dsh-antigravity-auth')
+  private readonly sessions = new AgyRequestSessionStore()
   private readonly options: Required<Pick<AntigravityAdapterOptions, 'idleTimeoutMs' | 'totalTimeoutMs' | 'maxResponseBytes' | 'maxFrameBytes'>> & {
     readonly responseHeaderTimeoutMs: number
   }
@@ -376,7 +377,6 @@ export class AntigravityAdapter extends LlmAdapter {
       }
       try {
         yield* this.streamResponse(response, options, hasEmitted)
-        this.sessions.completeExecution(sessionKey)
         return
       } catch (error) {
         const privateError = error instanceof PrivateTransportError ? error : undefined
@@ -1078,6 +1078,19 @@ function groupClaudeFunctionResponses(
   return grouped
 }
 
+/**
+ * Antigravity answers a misleading `429 RESOURCE_EXHAUSTED` when the system
+ * prompt names the harness that sent it (cortexkit/antigravity-auth#70). The
+ * core rewrites the OpenCode and Pi lines; DSH's own fixed identity section
+ * (`harness:identity` in @deepseek-ai/dsh-system-prompt) is neutralized here.
+ * Deterministic, so the cached prompt prefix stays stable across turns.
+ */
+const DSH_IDENTITY_LINE = /You are an AI agent powered by DeepSeek Harness\./gu
+
+export function neutralizeHostIdentity(text: string): string {
+  return rewriteHarnessIdentity(text).replace(DSH_IDENTITY_LINE, 'You are an AI agent.')
+}
+
 function buildPayloadFromContents(
   options: GenerateOptions,
   credential: HostCredential,
@@ -1090,9 +1103,9 @@ function buildPayloadFromContents(
   // V3 AgentLoop stores instructions in system messages. One-shot callers may
   // still provide a separate preface; preserve both in their original order.
   const systemParts = [
-    ...(options.system?.trim() ? [{ text: options.system }] : []),
+    ...(options.system?.trim() ? [{ text: neutralizeHostIdentity(options.system) }] : []),
     ...options.messages.flatMap(message => message.role === 'system'
-      ? message.content.flatMap(block => block.type === 'text' && block.text.trim() ? [{ text: block.text }] : [])
+      ? message.content.flatMap(block => block.type === 'text' && block.text.trim() ? [{ text: neutralizeHostIdentity(block.text) }] : [])
       : []),
   ]
   if (systemParts.length > 0) request.systemInstruction = { parts: systemParts }

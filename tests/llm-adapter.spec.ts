@@ -1357,8 +1357,7 @@ describe('Antigravity LLM adapter', () => {
       maxOutputTokens: 128000,
       thinkingConfig: {
         includeThoughts: true,
-        thinkingBudget: 0,
-        thinkingLevel: 'MEDIUM',
+                thinkingLevel: 'MEDIUM',
       },
     })
   })

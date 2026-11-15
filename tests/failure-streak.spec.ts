@@ -153,7 +153,7 @@ describe('pool file compatibility', () => {
       activeIndex: 0,
       revision: 1,
       updatedAt: new Date(0).toISOString(),
-    }), 'utf8')
+    }), { encoding: 'utf8', mode: 0o600 })
 
     const pool = await readPoolFile(path)
     const account = pool.accounts[0]

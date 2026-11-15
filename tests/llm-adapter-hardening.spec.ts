@@ -192,7 +192,7 @@ describe('LLM adapter hardening: Tool schemas', () => {
       tools,
     }, MOCK_CREDENTIAL)
 
-    const declarations = ((payload.request as { tools: Array<{ functionDeclarations: Array<Record<string, unknown>> }> }).tools)[0]?.functionDeclarations ?? []
+    const declarations = ((payload.request as { tools: Array<{ functionDeclarations: Array<Record<string, unknown>> }> }).tools).flatMap(entry => entry.functionDeclarations ?? [])
     const wire = JSON.stringify(declarations)
     expect(wire).not.toContain('"anyOf"')
     expect(wire).not.toContain('"oneOf"')
