@@ -37,7 +37,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
   }
 }
 
-/** Register one disposable settings section and no capability controls. */
+/** Register the Antigravity card on the Models page; full settings open from the card. */
 export function apply(ctx: ClientContext): void {
   try {
     ctx.effect(() => ctx.locale?.register(NS, { zh, en }), 'antigravity-auth: copy dictionaries')
@@ -64,19 +64,11 @@ export function apply(ctx: ClientContext): void {
     }
     ctx.effect(() => ctx.on?.('connection/reset', reset), 'antigravity-auth: connection invalidation')
 
-    ctx.slots?.inject?.('settings.section', () => ctx.slots.register({
-      name: 'settings.section',
-      id: 'antigravity-auth',
-      order: 20,
-      label: () => t('nav'),
-      inject: (): AntigravityAuthSettingsProps => ({ rpc, t, subscribe, imageScope }),
-    }, AntigravityAuthSettings))
-
     ctx.slots?.inject?.('settings.models.footer', () => ctx.slots.register({
       name: 'settings.models.footer',
       id: 'antigravity-account',
       order: 105,
-      inject: () => ({ rpc, t, subscribe }),
+      inject: () => ({ rpc, t, subscribe, imageScope }),
     }, AntigravityModelsCard))
   } catch (err) {
     console.error('[dsh-tool-antigravity] Failed in client apply:', err)

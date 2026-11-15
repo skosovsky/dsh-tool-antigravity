@@ -78,7 +78,6 @@ describe('Antigravity client apply', () => {
     const b = bench()
 
     expect(b.slots.map(record => record.options)).toEqual([
-      expect.objectContaining({ name: 'settings.section', id: 'antigravity-auth', order: 20 }),
       expect.objectContaining({ name: 'settings.models.footer', id: 'antigravity-account', order: 105 }),
     ])
     const settings = b.slots[0]
@@ -96,7 +95,7 @@ describe('Antigravity client apply', () => {
   it('registers the settings section gracefully for non-loopback browser connection', () => {
     const b = bench(false)
 
-    expect(b.slots).toHaveLength(2)
+    expect(b.slots).toHaveLength(1)
     expect(b.dictionaries.size).toBe(1)
 
     b.dispose()

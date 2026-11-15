@@ -152,7 +152,11 @@ export const en = {
   modelsPowered: 'Powered by the Antigravity plugin.',
   modelsViewQuota: 'View quota',
   modelsHideQuota: 'Hide quota',
-  modelsHelp: 'Sign-in, accounts, proxy and image options are in Settings → Antigravity.',
+  modelsHelp: 'Accounts, proxy, image options and capabilities:',
+  modelsSignIn: 'Sign in',
+  modelsMoreSettings: 'More settings',
+  modelsClose: 'Close',
+  modelsManage: 'Manage accounts',
 } as const
 
 export type AntigravityAuthKey = keyof typeof en
@@ -309,5 +313,9 @@ export const zh: Record<AntigravityAuthKey, string> = {
   modelsPowered: '由 Antigravity 插件提供。',
   modelsViewQuota: '查看配额',
   modelsHideQuota: '收起配额',
-  modelsHelp: '登录、账号、代理和图像选项位于 设置 → Antigravity。',
+  modelsHelp: '账号、代理、图像选项和能力：',
+  modelsSignIn: '登录',
+  modelsMoreSettings: '更多设置',
+  modelsClose: '关闭',
+  modelsManage: '管理账号',
 }

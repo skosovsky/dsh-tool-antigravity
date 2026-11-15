@@ -6,13 +6,16 @@ import type { AntigravityAuthRpcClient } from '../rpc-contract.ts'
 import type { QuotaStatusView } from '../quota.ts'
 import type { AntigravityStatusView } from '../status.ts'
 import type { AntigravityAuthKey } from './locales.ts'
-import { QuotaVisualDashboard } from './AntigravityAuthSettings.tsx'
+import { AntigravityAuthSettings, QuotaVisualDashboard } from './AntigravityAuthSettings.tsx'
+import type { AntigravityAuthSettingsProps } from './AntigravityAuthSettings.tsx'
+import { SettingsDialog } from './SettingsDialog.tsx'
 import { ensureSettingsStyles } from './styles.ts'
 
 export interface AntigravityModelsCardProps {
   readonly rpc: AntigravityAuthRpcClient
   readonly t: (key: AntigravityAuthKey) => string
   readonly subscribe: (listener: () => void) => () => void
+  readonly imageScope?: AntigravityAuthSettingsProps['imageScope']
 }
 
 const secondary = { color: 'var(--dsw-alias-label-secondary, #888)', fontSize: 12, lineHeight: '18px' } as const
@@ -27,12 +30,13 @@ export function antigravitySignedIn(status: AntigravityStatusView | null): boole
   return status.credential?.configured === true || status.accounts.length > 0
 }
 
-export function AntigravityModelsCard({ rpc, t, subscribe }: AntigravityModelsCardProps): ReactNode {
+export function AntigravityModelsCard({ rpc, t, subscribe, imageScope }: AntigravityModelsCardProps): ReactNode {
   const [status, setStatus] = useState<AntigravityStatusView | null>(null)
   const [quota, setQuota] = useState<QuotaStatusView | null>(null)
   const [quotaError, setQuotaError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [open, setOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -79,18 +83,29 @@ export function AntigravityModelsCard({ rpc, t, subscribe }: AntigravityModelsCa
           </div>
         </div>
       )}
-      {signedIn && rpc.usage !== undefined && (
-        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+        {!signedIn && <button type="button" style={button} onClick={() => { setSettingsOpen(true) }}>{t('modelsSignIn')}</button>}
+        {signedIn && rpc.usage !== undefined && (
           <button type="button" style={button} aria-expanded={open} onClick={() => { setOpen(!open) }}>{open ? t('modelsHideQuota') : t('modelsViewQuota')}</button>
-          {open && <button type="button" style={button} disabled={busy} onClick={() => { void loadQuota(true) }}>{busy ? t('quotaLoading') : t('quotaRefresh')}</button>}
-        </div>
-      )}
+        )}
+        {signedIn && open && <button type="button" style={button} disabled={busy} onClick={() => { void loadQuota(true) }}>{busy ? t('quotaLoading') : t('quotaRefresh')}</button>}
+        {signedIn && <button type="button" style={button} onClick={() => { setSettingsOpen(true) }}>{t('modelsManage')}</button>}
+      </div>
       {open && signedIn && (
         <div style={{ borderTop: '1px solid var(--dsw-alias-border-l2)', marginTop: 12, paddingTop: 12 }}>
           <QuotaVisualDashboard quota={quota} busy={busy} error={quotaError} t={t} />
         </div>
       )}
-      <div style={{ ...secondary, marginTop: 12 }}>{t('modelsHelp')}</div>
+      <div style={{ ...secondary, marginTop: 12 }}>
+        {t('modelsHelp')}{' '}
+        <button type="button" onClick={() => { setSettingsOpen(true) }}
+          style={{ padding: 0, border: 0, background: 'transparent', color: 'inherit', font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>{t('modelsMoreSettings')}</button>
+      </div>
+      {settingsOpen && (
+        <SettingsDialog title={t('modelsCardName')} closeLabel={t('modelsClose')} onClose={() => { setSettingsOpen(false); void load() }}>
+          <AntigravityAuthSettings rpc={rpc} t={t} subscribe={subscribe} imageScope={imageScope} />
+        </SettingsDialog>
+      )}
     </div>
   )
 }
