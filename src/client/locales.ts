@@ -146,6 +146,13 @@ export const en = {
   proxySaved: 'Proxy saved and applied: ',
   proxyCleared: 'Proxy cleared, reverted to auto environment detection / direct connection',
   saveProxyFailed: 'Failed to save proxy: ',
+  modelsCardName: 'Antigravity (Gemini)',
+  modelsSignedIn: 'Signed in',
+  modelsSignedOut: 'Not connected',
+  modelsPowered: 'Powered by the Antigravity plugin.',
+  modelsViewQuota: 'View quota',
+  modelsHideQuota: 'Hide quota',
+  modelsHelp: 'Sign-in, accounts, proxy and image options are in Settings → Antigravity.',
 } as const
 
 export type AntigravityAuthKey = keyof typeof en
@@ -296,4 +303,11 @@ export const zh: Record<AntigravityAuthKey, string> = {
   proxySaved: '代理已保存并生效: ',
   proxyCleared: '代理已清空，恢复为自动检测环境变量 / 直连',
   saveProxyFailed: '保存代理失败: ',
+  modelsCardName: 'Antigravity (Gemini)',
+  modelsSignedIn: '已登录',
+  modelsSignedOut: '未连接',
+  modelsPowered: '由 Antigravity 插件提供。',
+  modelsViewQuota: '查看配额',
+  modelsHideQuota: '收起配额',
+  modelsHelp: '登录、账号、代理和图像选项位于 设置 → Antigravity。',
 }

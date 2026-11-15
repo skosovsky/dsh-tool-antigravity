@@ -8,6 +8,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-slots'
 import { createAntigravityAuthRpcClient } from '../rpc-contract.ts'
 import { AntigravityAuthSettings } from './AntigravityAuthSettings.tsx'
+import { AntigravityModelsCard } from './AntigravityModelsCard.tsx'
 import { en, zh, type AntigravityAuthKey } from './locales.ts'
 import type { AntigravityAuthSettingsProps } from './AntigravityAuthSettings.tsx'
 import type { AntigravityImageSettings } from '../image.ts'
@@ -22,6 +23,14 @@ export type { AntigravityAuthKey } from './locales.ts'
 /** Client services required by the settings section and its loopback RPC. */
 export const inject = ['slots', 'locale', 'connection', 'configForms']
 declare module '@deepseek-ai/dsh-client-ui-slots' {
+  interface SlotMap {
+    /**
+     * Cards after the provider rows on the Models page, declared by
+     * dsh-client-ui-settings-models (not a dependency here, so the seat is
+     * restated). Without that package the seat renders nothing.
+     */
+    'settings.models.footer': { kind: 'list'; scope: 'root'; owner: Record<string, never> }
+  }
   interface LocaleNamespaceMap {
     /** Copy for the Antigravity bootstrap settings section. */
     'settings.antigravityAuth': AntigravityAuthKey
@@ -62,6 +71,13 @@ export function apply(ctx: ClientContext): void {
       label: () => t('nav'),
       inject: (): AntigravityAuthSettingsProps => ({ rpc, t, subscribe, imageScope }),
     }, AntigravityAuthSettings))
+
+    ctx.slots?.inject?.('settings.models.footer', () => ctx.slots.register({
+      name: 'settings.models.footer',
+      id: 'antigravity-account',
+      order: 105,
+      inject: () => ({ rpc, t, subscribe }),
+    }, AntigravityModelsCard))
   } catch (err) {
     console.error('[dsh-tool-antigravity] Failed in client apply:', err)
   }

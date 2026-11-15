@@ -480,7 +480,7 @@ function quotaTone(fraction: number): 'normal' | 'warning' | 'error' {
   return 'normal'
 }
 
-function QuotaVisualDashboard({
+export function QuotaVisualDashboard({
   quota,
   busy,
   error,
